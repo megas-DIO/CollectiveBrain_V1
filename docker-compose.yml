@@ -1,0 +1,141 @@
+# CollectiveBrain Multi-Agent System - Docker Compose Configuration
+
+version: '3.8'
+
+services:
+  # CollectiveBrain API Service
+  collective-brain:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: collective-brain-api
+    ports:
+      - "8000:8000"
+    environment:
+      - CB_ENVIRONMENT=production
+      - CB_LOG_LEVEL=INFO
+      - CB_API_HOST=0.0.0.0
+      - CB_API_PORT=8000
+      - CB_MEMORY_REDIS_HOST=redis
+      - CB_MEMORY_REDIS_PORT=6379
+      - CB_MEMORY_MILVUS_HOST=milvus
+      - CB_MEMORY_MILVUS_PORT=19530
+      - CB_MEMORY_NEO4J_URI=bolt://neo4j:7687
+      - CB_MEMORY_NEO4J_USER=neo4j
+      - CB_MEMORY_NEO4J_PASSWORD=${NEO4J_PASSWORD:-password}
+    depends_on:
+      - redis
+      - milvus
+      - neo4j
+    networks:
+      - cbrain-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis - Session Memory
+  redis:
+    image: redis:7-alpine
+    container_name: collective-brain-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - cbrain-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Milvus - Semantic Memory (Vector Database)
+  milvus:
+    image: milvusdb/milvus:latest
+    container_name: collective-brain-milvus
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    environment:
+      - ETCD_ENDPOINTS=etcd:2379
+      - MINIO_ADDRESS=minio:9000
+    depends_on:
+      - etcd
+      - minio
+    networks:
+      - cbrain-network
+    restart: unless-stopped
+    volumes:
+      - milvus-data:/var/lib/milvus
+
+  # etcd - Milvus dependency
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    container_name: collective-brain-etcd
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    networks:
+      - cbrain-network
+    volumes:
+      - etcd-data:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+
+  # MinIO - Milvus dependency
+  minio:
+    image: minio/minio:latest
+    container_name: collective-brain-minio
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - cbrain-network
+    volumes:
+      - minio-data:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Neo4j - Relational Memory (Knowledge Graph)
+  neo4j:
+    image: neo4j:5-community
+    container_name: collective-brain-neo4j
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-password}
+      - NEO4J_dbms_memory_pagecache_size=1G
+      - NEO4J_dbms_memory_heap_initial__size=1G
+      - NEO4J_dbms_memory_heap_max__size=1G
+    networks:
+      - cbrain-network
+    restart: unless-stopped
+    volumes:
+      - neo4j-data:/data
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "${NEO4J_PASSWORD:-password}", "RETURN 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  cbrain-network:
+    driver: bridge
+
+volumes:
+  milvus-data:
+  etcd-data:
+  minio-data:
+  neo4j-data:

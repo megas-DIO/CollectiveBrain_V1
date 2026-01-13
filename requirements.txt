@@ -1,0 +1,59 @@
+# CollectiveBrain Multi-Agent System - Dependencies
+
+# Core Python packages
+python-dateutil>=2.8.2
+
+# API Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Memory Layer - Production Dependencies (Optional)
+# Uncomment when integrating with actual services
+
+# Redis for Session Memory
+# redis>=5.0.1
+# redis-om>=0.2.1
+
+# Milvus for Semantic Memory
+# pymilvus>=2.3.4
+
+# Neo4j for Relational Memory
+# neo4j>=5.16.0
+
+# Vector Embeddings
+# openai>=1.10.0  # For OpenAI embeddings
+# sentence-transformers>=2.3.1  # For local embeddings
+
+# GitHub Models Integration (when available)
+# anthropic>=0.18.1  # For Claude models via GitHub
+# openai>=1.10.0  # For OpenAI models via GitHub
+
+# Testing
+pytest>=7.4.4
+pytest-asyncio>=0.23.3
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+
+# Code Quality
+black>=24.1.0
+flake8>=7.0.0
+mypy>=1.8.0
+isort>=5.13.2
+
+# Logging and Monitoring
+python-json-logger>=2.0.7
+prometheus-client>=0.19.0
+
+# Configuration
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
+
+# Utilities
+requests>=2.31.0
+httpx>=0.26.0
+
+# Development
+ipython>=8.20.0
+jupyter>=1.0.0
