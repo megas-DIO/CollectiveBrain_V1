@@ -217,11 +217,51 @@ CollectiveBrain_V1/
 - [x] 4-tier memory layer (stubs)
 - [x] Docker containerization
 - [x] CI/CD pipeline
+- [x] REST API interface (`api.py`)
 - [ ] Redis integration for SessionMemory
 - [ ] Milvus integration for SemanticMemory
 - [ ] Neo4j integration for RelationalMemory
-- [ ] REST API interface
 - [ ] Web dashboard
+
+## 🌐 REST API
+
+Start the API server:
+
+```bash
+# Using uvicorn directly
+uvicorn api:app --host 0.0.0.0 --port 8000
+
+# Or run the script
+python api.py
+```
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check |
+| GET | `/status` | System status |
+| POST | `/orchestrate` | Decompose & execute objective |
+| POST | `/consensus/initiate` | Start a DCBFT vote |
+| POST | `/consensus/{id}/vote` | Cast a vote |
+| POST | `/consensus/{id}/tally` | Tally and get result |
+| POST | `/memory/working` | Add to working memory |
+| GET | `/memory/status` | Memory layer status |
+| GET | `/workers` | List worker pool |
+
+### Example
+
+```bash
+# Orchestrate an objective
+curl -X POST http://localhost:8000/orchestrate \
+  -H "Content-Type: application/json" \
+  -d '{"objective": "Build a RAG pipeline"}'
+
+# Initiate consensus
+curl -X POST http://localhost:8000/consensus/initiate \
+  -H "Content-Type: application/json" \
+  -d '{"description": "Deploy to production"}'
+```
 
 ## 📄 License
 
