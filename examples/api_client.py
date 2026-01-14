@@ -2,7 +2,16 @@
 API Client Example - CollectiveBrain Multi-Agent System
 
 This example demonstrates how to interact with the CollectiveBrain API.
+
+Note: This requires the API server to be running.
+Start the server with: python api.py
 """
+
+import sys
+from pathlib import Path
+
+# Add parent directory to path for imports (if needed)
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import requests
 import time
