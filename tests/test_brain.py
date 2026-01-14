@@ -11,6 +11,7 @@ from orchestrator import Orchestrator
 from worker_pool import WorkerPool
 from memory_layer import UnifiedMemoryLayer, WorkingMemory
 from consensus_engine import DCBFTEngine, VoteType
+from deployment import DeploymentManager
 
 
 class TestOrchestrator:
@@ -154,6 +155,32 @@ class TestConsensusEngine:
         
         assert result["decision"] in ["approved", "rejected"]
         assert "consensus_percentage" in result
+
+
+class TestDeployment:
+    """Test suite for deployment utilities."""
+
+    def test_build_plan_basic(self):
+        manager = DeploymentManager()
+        plan = manager.build_plan("basic")
+
+        assert plan.mode == "basic"
+        assert "docker" in plan.command[0]
+        assert "--profile" not in plan.command
+
+    def test_build_plan_production(self):
+        manager = DeploymentManager()
+        plan = manager.build_plan("production")
+
+        assert plan.mode == "production"
+        assert "--profile" in plan.command
+
+    def test_validate_no_tool_check(self):
+        manager = DeploymentManager()
+        result = manager.validate("basic", check_tools=False)
+
+        assert "issues" in result
+        assert "warnings" in result
 
 
 class TestIntegration:

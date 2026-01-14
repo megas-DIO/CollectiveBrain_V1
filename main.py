@@ -5,6 +5,7 @@ Usage:
     python main.py orchestrate "Build a RAG pipeline"
     python main.py consensus "Deploy to production"
     python main.py status
+    python main.py deploy [basic|production] [--execute]
 """
 
 import sys
@@ -12,6 +13,7 @@ from orchestrator import Orchestrator
 from consensus_engine import DCBFTEngine, VoteType
 from memory_layer import UnifiedMemoryLayer
 from worker_pool import WorkerPool
+from deployment import DeploymentManager
 
 
 def main():
@@ -37,6 +39,20 @@ def main():
     
     elif command == "status":
         show_status()
+
+    elif command == "deploy":
+        mode = "basic"
+        execute = False
+        for arg in sys.argv[2:]:
+            if arg in {"basic", "production"}:
+                mode = arg
+            elif arg in {"--execute", "--apply"}:
+                execute = True
+            else:
+                print(f"Unknown deploy option: {arg}")
+                print("Usage: python main.py deploy [basic|production] [--execute]")
+                return
+        run_deploy(mode, execute)
     
     else:
         print(f"Unknown command: {command}")
@@ -138,6 +154,41 @@ def show_status():
         print(f"  {layer}:")
         for k, v in info.items():
             print(f"    {k}: {v}")
+
+
+def run_deploy(mode: str, execute: bool) -> None:
+    """Deploy CollectiveBrain using Docker Compose."""
+    manager = DeploymentManager()
+    plan = manager.build_plan(mode)
+    validation = manager.validate(mode, check_tools=execute)
+
+    print(f"\n[DEPLOY] CollectiveBrain Deployment ({plan.mode})")
+    print(f"{'='*50}")
+    print(f"Compose file: {plan.compose_file}")
+    print("\nPlan:")
+    for step in plan.steps:
+        print(f"  - {step}")
+
+    if validation["warnings"]:
+        print("\nWarnings:")
+        for warning in validation["warnings"]:
+            print(f"  - {warning}")
+
+    if validation["issues"]:
+        print("\nBlocking issues:")
+        for issue in validation["issues"]:
+            print(f"  - {issue}")
+        return
+
+    print(f"\nCommand: {' '.join(plan.command)}")
+    if execute:
+        result = manager.deploy(mode, execute=True)
+        if result["error"]:
+            print(f"[ERROR] {result['error']}")
+        else:
+            print("[OK] Deployment command executed.")
+    else:
+        print("Dry run complete. Re-run with --execute to apply.")
 
 
 if __name__ == "__main__":

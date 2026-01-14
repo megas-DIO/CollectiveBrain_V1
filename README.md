@@ -65,6 +65,12 @@ python main.py orchestrate "Build a vector search capability"
 # Run consensus vote
 python main.py consensus "Deploy to production"
 
+# Preview deployment plan (dry run)
+python main.py deploy basic
+
+# Execute deployment with production profile
+python main.py deploy production --execute
+
 # Check system status
 python main.py status
 ```
